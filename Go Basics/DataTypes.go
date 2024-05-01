@@ -49,6 +49,17 @@ func main(){
 	var pass string = "1242"
 	fmt.Println("username : "+Uname, "Password : "+pass)
 	fmt.Println("username : "+Uname, "Password : "+pass)
+	//there is no specific datatype to store character types like char in C
+	//Golang has integer types called byte and rune that are aliases for uint8 and int32 data types, respectively.
+	//but byte and rune are int types, so byte stores in ascii and rune stores in utf format
+	var c byte = 'a';
+	var r rune = 'b';
+	fmt.Println(c, r);
+	s1 := byte('Z');
+	s2 := 'Y';
+	fmt.Printf("value : %v and Type : %T",c,c);
+	fmt.Printf("value : %v and Type : %T",s1,s1);
+	fmt.Printf("value : %v and Type : %T",s2,s2);
 
 }
 

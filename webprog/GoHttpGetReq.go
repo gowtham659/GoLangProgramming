@@ -25,7 +25,8 @@ type arg struct{
 func main(){
 	var res *http.Response
 	var err error
-	res,err = http.Get("https://httpbin.org/get")
+
+	//res,err = http.Get("https://httpbin.org/get")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -33,6 +34,8 @@ func main(){
 	fmt.Println(string(body))
 
 	var hres httpresp
+
+	//converting byte array to struct type
 	err1 := json.Unmarshal(body,&hres)
 	if err1 != nil {
 		fmt.Println(err1)
