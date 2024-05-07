@@ -69,7 +69,7 @@ func (mtc *ModelTestCase) requestBody(req *http.Request) *http.Request {
 
 	if mtc.Method != "GET" {
 		req.Method = mtc.Method //adding request type from collection.json to request object
-		if mtc.IsBody == true {
+		if mtc.IsBody{
 			if mtc.BodyContentType == "json" {
 				//request body is of type readcloser so the json format must be converted to readcloser type
 				bread := strings.NewReader(mtc.BodyJson) //converting json format data to reader tye
@@ -84,13 +84,8 @@ func (mtc *ModelTestCase) requestBody(req *http.Request) *http.Request {
 					}
 				}
 			}
-		} else {
-			nobody := strings.NewReader("no body for current post request")
-			req.Body = io.NopCloser(nobody)
-		}
-	} else {
-		req.Body = nil
-	}
+		} 
+	} 
 	return req
 
 }
@@ -117,7 +112,7 @@ func main() {
 
 	var mc ModelCollection
 
-	bary, err := ioutil.ReadFile("WebAppPrac/collection.json")
+	bary, err := ioutil.ReadFile("collection.json")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -126,24 +121,67 @@ func main() {
 		fmt.Println(er)
 	}
 
-	for _, j := range mc.TestCaseMap {
-		httpreq := newRequestObj(j.Path)
-		j.requestBody(httpreq)
-		j.requestHeader(httpreq)
 
-		//for displaying request body
-		if httpreq.Body != nil { //checking body is null or not
-			body, err := ioutil.ReadAll(httpreq.Body)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+//creating request object based on order of testcaseorder by iterrating using for loop
+		for i:=1;i<=len(mc.TestCaseOrder);i++{
+		mtc := mc.TestCaseMap[mc.TestCaseOrder[i]]
+		httpreq:=newRequestObj(mtc.Path)
+		mtc.requestBody(httpreq)
+		mtc.requestHeader(httpreq)
 
-			// Display the response body
-			fmt.Println(string(body))
-
-		}
 		fmt.Println(httpreq)
 
-	}
+		//for displaying request body
+		if  httpreq.Body !=nil{ //checking body is null or not
+			body, err := ioutil.ReadAll(httpreq.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(body)) 
+		}
+	} 
+	//creating request object based on order of testcaseorder by iterrating using for loop
+	for i:=1;i<=len(mc.TestCaseOrder);i++{
+		mtc := mc.TestCaseMap[mc.TestCaseOrder[i]]
+		httpreq:=newRequestObj(mtc.Path)
+		mtc.requestBody(httpreq)
+		mtc.requestHeader(httpreq)
+
+		fmt.Println(httpreq)
+
+		//for displaying request body
+		if  httpreq.Body !=nil{ //checking body is null or not
+			body, err := ioutil.ReadAll(httpreq.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(body)) 
+		}
+	} 
+
+		//creating request object based on order of testcaseorder by iterrating using for loop with range
+	/* for _,j :=range mc.TestCaseMap{
+		httpreq := newRequestObj(j.Path)
+		j.requestBody(httpreq)
+		j.requestHeader(httpreq)		
+		
+		//for displaying request body
+		if  httpreq.Body !=nil{ //checking body is null or not
+			body, err := ioutil.ReadAll(httpreq.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(body))
+		
+		}
+		//fmt.Println(httpreq) 
+		// Display the response body.
+		
+	} */
+
+	
+
+		
 }
+
+
