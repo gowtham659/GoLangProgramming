@@ -105,14 +105,14 @@ func (mtc *ModelTestCase) requestHeader(req *http.Request) *http.Request {
 
 func (mtc *ModelTestCase)queryString(req *http.Request) *http.Request{
 	url := req.URL //returns url of type url.URL from the request object
-
-	qstring := url.Query()
-	for _,j:= range mtc.QueryParams{
-		qstring.Add(j.ParamKey,j.ParamValue)
-		
+	qstring := url.Query() //returns the query string from url as url.values map
+	if mtc.QueryParams != nil {
+		for _,j:= range mtc.QueryParams{
+			qstring.Add(j.ParamKey,j.ParamValue)// adding key value parameters to url.values map
+		}
+		url.RawQuery = qstring.Encode()//converring map to string and storing in RawQuery of type string which is a member of URL
+		fmt.Println(url.String())
 	}
-	url.RawQuery = qstring.Encode()
-	fmt.Println(url.String())
 	return req
 }
 func main() {
