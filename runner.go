@@ -103,6 +103,18 @@ func (mtc *ModelTestCase) requestHeader(req *http.Request) *http.Request {
 	return req
 }
 
+func (mtc *ModelTestCase)queryString(req *http.Request) *http.Request{
+	url := req.URL //returns url of type url.URL from the request object
+
+	qstring := url.Query()
+	for _,j:= range mtc.QueryParams{
+		qstring.Add(j.ParamKey,j.ParamValue)
+		
+	}
+	url.RawQuery = qstring.Encode()
+	fmt.Println(url.String())
+	return req
+}
 func main() {
 	// Build a function that takes ModelTestCase and returns a request object
 	// reference https://pkg.go.dev/net/http#NewRequestWithContext
@@ -123,41 +135,26 @@ func main() {
 
 
 //creating request object based on order of testcaseorder by iterrating using for loop
+		
 		for i:=1;i<=len(mc.TestCaseOrder);i++{
 		mtc := mc.TestCaseMap[mc.TestCaseOrder[i]]
 		httpreq:=newRequestObj(mtc.Path)
 		mtc.requestBody(httpreq)
 		mtc.requestHeader(httpreq)
 
+		mtc.queryString(httpreq)
 		fmt.Println(httpreq)
 
 		//for displaying request body
-		if  httpreq.Body !=nil{ //checking body is null or not
+		/* if  httpreq.Body !=nil{ //checking body is null or not
 			body, err := ioutil.ReadAll(httpreq.Body)
 		if err != nil {
 			fmt.Println(err)
 		}
 		fmt.Println(string(body)) 
-		}
+		} */
 	} 
-	//creating request object based on order of testcaseorder by iterrating using for loop
-	for i:=1;i<=len(mc.TestCaseOrder);i++{
-		mtc := mc.TestCaseMap[mc.TestCaseOrder[i]]
-		httpreq:=newRequestObj(mtc.Path)
-		mtc.requestBody(httpreq)
-		mtc.requestHeader(httpreq)
-
-		fmt.Println(httpreq)
-
-		//for displaying request body
-		if  httpreq.Body !=nil{ //checking body is null or not
-			body, err := ioutil.ReadAll(httpreq.Body)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(string(body)) 
-		}
-	} 
+	
 
 		//creating request object based on order of testcaseorder by iterrating using for loop with range
 	/* for _,j :=range mc.TestCaseMap{
