@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -92,16 +93,17 @@ func (mtc *ModelTestCase) GetBody(req *http.Request){
 			req.Body.Read([]byte(mtc.BodyJson))
 		}
 	}
-	
-	
-	
 }
-func (mtc *ModelTestCase) CreateRequestObject(server string) (*http.Request){
+func (mtc *ModelTestCase) CreateRequest(server string) (*http.Request,error){
 	req,_:=http.NewRequest(mtc.Method,server,nil)
 	req.URL = mtc.GetURL(server)
 	req.Header = mtc.GetHeader()
 	mtc.GetBody(req)
-	return req
+	if req ==nil {
+		er:=errors.New("unable to request")
+		return nil,er
+	}
+	return req,nil
 }
 
 func main(){
@@ -114,9 +116,10 @@ func main(){
 
 	for _,j:= range mc.TestCaseOrder{ 
 		mtc:=mc.TestCaseMap[j]
-		req:=mtc.CreateRequestObject("https://geeksforgeeks.com/")
-
+		req,er:=mtc.CreateRequest("https://geeksforgeeks.com/")
+		if er != nil {
+			fmt.Println(er)
+		}
 		fmt.Println(*req)
 	}
-
 }
