@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"strings"
+	"net/url"
+	"os"
 )
+
 
 type ModelCollection struct {
 	UID              string            `json:"UID"`
@@ -53,132 +53,70 @@ type ModelTestCaseParameter struct {
 	ParamValue  string `json:"ParamValue"`
 }
 
-// creates and returns a new request object for every modeltestcase
-func newRequestObj(endpath string) *http.Request {
-	//creates a new request object
-	//first parameter: constant which is default method type "GET"
-	//second para: URL concatenated with path received from collection.json
-	//third: current request method is "GET" so body is nil
-	httpreq, er := http.NewRequest(http.MethodGet, "https://httpbin.org/get"+endpath, nil)
-	if er != nil {
-		log.Fatal("unable to create request")
+func (mtc *ModelTestCase) GetURL(server string) *url.URL{
+	furl:=fmt.Sprintf("%s%s",server,mtc.Path)
+	URLA,_:= url.Parse(furl)
+	if mtc.QueryParams != nil{
+		qval:= URLA.Query()
+		for _,j:= range mtc.QueryParams{
+			qval.Add(j.ParamKey,j.ParamValue)
+		}
+		URLA.RawQuery = qval.Encode()
 	}
-	return httpreq
-}
-func (mtc *ModelTestCase) requestBody(req *http.Request) *http.Request {
-
-	if mtc.Method != "GET" {
-		req.Method = mtc.Method //adding request type from collection.json to request object
-		if mtc.IsBody{
-			if mtc.BodyContentType == "json" {
-				//request body is of type readcloser so the json format must be converted to readcloser type
-				bread := strings.NewReader(mtc.BodyJson) //converting json format data to reader tye
-				req.Body = ioutil.NopCloser(bread)       // reader type to readcloser type
-
-			} else if (mtc.BodyContentType == "form") {
-				if mtc.BodyParams != nil {
-					for _, j := range mtc.BodyParams {
-						mtcpara, _ := json.Marshal(j)     //converting struct type to byte array format
-						mread := bytes.NewReader(mtcpara) //byte array to reader type
-						req.Body = io.NopCloser(mread)    //reader to readcloser
-					}
-				}
-			}
-		} 
-	} 
-	return req
-
+	return URLA
 }
 
-// returns a request object with data in header section
-func (mtc *ModelTestCase) requestHeader(req *http.Request) *http.Request {
+func (mtc *ModelTestCase) GetHeader() http.Header{
+	var head http.Header = http.Header{}
 	if mtc.HeaderParams != nil { //check headerparams null or not
 		for _, j := range mtc.HeaderParams { //iterate over map
-			req.Header.Set(j.ParamKey,j.ParamValue)
-			
-			//mtcpara, _ := json.Marshal(j)      //marshalling modeltypeparameters to byte[]
-			//req.Header.Set(i, string(mtcpara)) //adding json data to http header in the form of key/value pairs
+			head.Add(j.ParamKey,j.ParamValue)
 		}
 	}
+	fmt.Println(head)
+	return head 
+}
+
+func (mtc *ModelTestCase) GetBody(req *http.Request){
+	if mtc.Method != "GET" && mtc.IsBody{
+		if mtc.BodyContentType == "Form"{
+			for _,j:= range mtc.BodyParams{
+				bar,er:=json.Marshal(j)
+				if er!= nil{
+					fmt.Println("eero",er)
+				}
+				bread:=bytes.NewReader(bar)
+				req.Body = io.NopCloser(bread) //reader to readcloser
+			}
+		}else if mtc.BodyContentType == "json" {
+			req.Body.Read([]byte(mtc.BodyJson))
+		}
+	}
+	
+	
+	
+}
+func (mtc *ModelTestCase) CreateRequestObject(server string) (*http.Request){
+	req,_:=http.NewRequest(mtc.Method,server,nil)
+	req.URL = mtc.GetURL(server)
+	req.Header = mtc.GetHeader()
+	mtc.GetBody(req)
 	return req
 }
 
-func (mtc *ModelTestCase)queryString(req *http.Request) *http.Request{
-	url := req.URL //returns url of type url.URL from the request object
-	qstring := url.Query() //returns the query string from url as url.values map
-	if mtc.QueryParams != nil {
-		for _,j:= range mtc.QueryParams{
-			qstring.Add(j.ParamKey,j.ParamValue)// adding key value parameters to url.values map
-		}
-		url.RawQuery = qstring.Encode()//converring map to string and storing in RawQuery of type string which is a member of URL
-		fmt.Println(url.String())
-	}
-	return req
-}
-func main() {
-	// Build a function that takes ModelTestCase and returns a request object
-	// reference https://pkg.go.dev/net/http#NewRequestWithContext
-	// Goal is to send requests for each ModelTestCase in the order defined
-	// in the ModelCollection:TestCaseOrder
-	// Refer collection.json
-
+func main(){
 	var mc ModelCollection
-
-	bary, err := ioutil.ReadFile("collection.json")
-	if err != nil {
-		fmt.Println(err)
-	}
-	er := json.Unmarshal(bary, &mc)
+	jdata,er:= os.ReadFile("./collection.json")
 	if er != nil {
-		fmt.Println(er)
+		fmt.Println("file not found",er)
+	}
+	json.Unmarshal(jdata,&mc)
+
+	for _,j:= range mc.TestCaseOrder{ 
+		mtc:=mc.TestCaseMap[j]
+		req:=mtc.CreateRequestObject("https://geeksforgeeks.com/")
+
+		fmt.Println(*req)
 	}
 
-
-//creating request object based on order of testcaseorder by iterrating using for loop
-		
-		for i:=1;i<=len(mc.TestCaseOrder);i++{
-		mtc := mc.TestCaseMap[mc.TestCaseOrder[i]]
-		httpreq:=newRequestObj(mtc.Path)
-		mtc.requestBody(httpreq)
-		mtc.requestHeader(httpreq)
-
-		mtc.queryString(httpreq)
-		fmt.Println(httpreq)
-
-		//for displaying request body
-		/* if  httpreq.Body !=nil{ //checking body is null or not
-			body, err := ioutil.ReadAll(httpreq.Body)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(string(body)) 
-		} */
-	} 
-	
-
-		//creating request object based on order of testcaseorder by iterrating using for loop with range
-	/* for _,j :=range mc.TestCaseMap{
-		httpreq := newRequestObj(j.Path)
-		j.requestBody(httpreq)
-		j.requestHeader(httpreq)		
-		
-		//for displaying request body
-		if  httpreq.Body !=nil{ //checking body is null or not
-			body, err := ioutil.ReadAll(httpreq.Body)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(string(body))
-		
-		}
-		//fmt.Println(httpreq) 
-		// Display the response body.
-		
-	} */
-
-	
-
-		
 }
-
-
